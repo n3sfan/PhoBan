@@ -1,0 +1,72 @@
+#     Product Information     #
+#-----------------------------#
+#      Author: CamChua_VN     #
+#        Version: v1.0        #
+#    Support: 1.12 -> 1.16.5  #
+#                             #
+#  ĐỘC QUYỀN BỞI DI HOA STORE #
+#-----------------------------#
+
+# Our Website: www.dihoastore.com
+# Email: dihoastore.mc@gmail.com
+# Fanpage: www.facebook.com/dihoastore/
+
+# Key License / Hướng dẫn cài: https://bit.ly/3gJtsbp
+license: "XXXX-XXXX-XXXX-XXXX"
+
+# Placeholder sử dụng cho Board:   %PhoBan_prefix%   - Hiển thị tên của phó bản
+#                                   %PhoBan_time%    - Đếm ngược thời gian phòng chơi
+#                                %PhoBan_minplayers% - Người chơi tối thiểu
+#                                %PhoBan_maxplayers% - Người chơi tối đa của phòng
+
+Settings:
+  # Lệnh được phép dùng khi trong phó bản
+  CommandWhitelist:
+    - "menu"
+    - "tp(.*)"
+
+  MaxPlayersInRooms: 3
+
+  # Thời gian countdown khi bắt đầu phó bản (tính bằng giây)
+  StartCountdown: 15
+
+  # Thời gian countdown để qua đợt quái tiếp theo (tính bằng giây)
+  StageCountdown: 15
+
+  # Thời gian tự rời phó bản khi hoàn thành (tính bằng giây)
+  QuitCountdown: 5
+
+  # Khoảng cách quái sẽ xuất hiện theo từng đợt
+  SpawnRadius: 2
+
+  # Số lượt tham gia phó bản mặc định mỗi ngày của người chơi
+  DefaultTurn: 1
+
+  MaxTurn: 20
+
+  CommandAliases:
+    - "pb"
+
+  # Phần thưởng ở dạng Command cho toàn bộ người chơi khi hoàn tất phó bản
+  RewardCommand:
+    test:
+      - eco give <player> 5000
+
+  # Tự động dịch chuyển lại vị trí quái khi qua đợt quái mới
+  TeleportNewStage: false
+
+  #Nếu đặt là true thì khi chết trong phó bản sẽ hồi sinh ngay trong phó bản
+  #Còn nếu đặt là false thì khi chết sẽ hồi sinh ngay ở spawn
+  DeathRespawn: true
+
+  # Khi chết sẽ cho người chơi ở trạng thái bảo vệ
+  RespawnProtect: 3
+
+  # Yêu cầu hoàn thành phó bản khác để vào phó bản
+  RoomRequire:
+    # Để vào phó bản test cần vào hoàn thành phó bản test1
+    test: test1
+
+  # Yêu cầu level để vào phó bản
+  LevelRequire:
+    test: 30
