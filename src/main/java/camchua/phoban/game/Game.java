@@ -19,8 +19,12 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 public class Game {
     private static LinkedHashMap<String, Game> game = new LinkedHashMap();
@@ -48,6 +52,7 @@ public class Game {
     public HashMap<String, Integer> current_progress;
     // BEGIN EDIT
     private Map<String, Integer> kills;
+    public int maxTurnsPerDay;
     // END EDIT
     private FileConfiguration room;
     private File configFile;
@@ -223,7 +228,10 @@ public class Game {
         timeBoss = new HashMap();
         timeBoss.put(boss_type, timeStage);
         String type = room.getString("Type");
-        Game g = new Game(name, time, spawn, max_players, stage1, stage2, stage3, boss, timeStage1, timeStage2, timeStage3, timeBoss, room, type, configFile);
+        // BEGIN EDIT
+        int maxTurnsPerDay = room.getInt("MaxTurnPerDay");
+        Game g = new Game(name, time, spawn, max_players, stage1, stage2, stage3, boss, timeStage1, timeStage2, timeStage3, timeBoss, room, type, configFile, maxTurnsPerDay);
+        // END
         game.put(name, g);
     }
 
@@ -303,7 +311,7 @@ public class Game {
     }
     // END EDIT
 
-    public Game(String name, int time, Location spawn, int max_players, HashMap<String, HashMap<String, Integer>> stage1, HashMap<String, HashMap<String, Integer>> stage2, HashMap<String, HashMap<String, Integer>> stage3, HashMap<String, Integer> boss, HashMap<String, HashMap<String, Integer>> timeStage1, HashMap<String, HashMap<String, Integer>> timeStage2, HashMap<String, HashMap<String, Integer>> timeStage3, HashMap<String, Integer> timeBoss, FileConfiguration room, String type, File configFile) {
+    public Game(String name, int time, Location spawn, int max_players, HashMap<String, HashMap<String, Integer>> stage1, HashMap<String, HashMap<String, Integer>> stage2, HashMap<String, HashMap<String, Integer>> stage3, HashMap<String, Integer> boss, HashMap<String, HashMap<String, Integer>> timeStage1, HashMap<String, HashMap<String, Integer>> timeStage2, HashMap<String, HashMap<String, Integer>> timeStage3, HashMap<String, Integer> timeBoss, FileConfiguration room, String type, File configFile, int maxTurnsPerDay) {
         this.name = name;
         this.status = GameStatus.WAITING;
         this.maxtime = time;
@@ -327,6 +335,7 @@ public class Game {
         this.current_progress = new HashMap();
         // BEGIN EDIT
         this.kills = new HashMap<>();
+        this.maxTurnsPerDay = maxTurnsPerDay;
         // END
         this.room = room;
         this.configFile = configFile;
@@ -645,7 +654,7 @@ public class Game {
                 }
 
                 loc.subtract(0.0, 1.0, 0.0);
-                BukkitAPIHelper mm = PhoBan.inst().getBukkitAPIHelper();
+                final BukkitAPIHelper mm = PhoBan.inst().getBukkitAPIHelper();
                 Iterator var19 = this.players.iterator();
 
                 while (var19.hasNext()) {
@@ -711,6 +720,17 @@ public class Game {
         FileConfiguration topConfig = FileManager.getFileConfig(FileManager.Files.TOP);
         if (topConfig.getInt("Plays." + name + '.' + p.getName()) >= config.getInt("Settings.MaxTurn")) {
             String msg = Messages.get("MaxTurnReached").replace("<max_turn>", "" + config.getInt("Settings.MaxTurn"));
+            p.sendMessage(msg);
+            return;
+        }
+        FileConfiguration turnConfig = FileManager.getFileConfig(FileManager.Files.TURNS);
+        if (LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) * 1000 - turnConfig.getLong("Start." + name) >= TimeUnit.DAYS.toMillis(1L)) {
+            turnConfig.set("Start." + name, LocalDate.now().atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000L);
+            turnConfig.set("Plays." + name, null);
+            FileManager.saveFileConfig(turnConfig, FileManager.Files.TURNS);
+        }
+        if (turnConfig.getInt("Plays." + name + '.' + p.getName()) >= this.maxTurnsPerDay) {
+            String msg = Messages.get("MaxTurnPerDayReached").replace("<max_turn>", "" + this.maxTurnsPerDay);
             p.sendMessage(msg);
             return;
         }
@@ -883,6 +903,10 @@ public class Game {
             sortTopPlayer(topConfig, type);
         }
         FileManager.saveFileConfig(topConfig, FileManager.Files.TOP);
+
+        FileConfiguration turnConfig = FileManager.getFileConfig(FileManager.Files.TURNS);
+        turnConfig.set("Plays." + name + '.' + p.getName(), turnConfig.getInt("Plays." + name + '.' + p.getName()) + 1);
+        FileManager.saveFileConfig(turnConfig, FileManager.Files.TURNS);
     }
 
     private static void sortTopPlayer(FileConfiguration topConfig, String game) {

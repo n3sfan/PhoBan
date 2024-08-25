@@ -55,6 +55,7 @@ public class ChooseTypeGui implements Listener {
                 replace.put("<status>", Arrays.asList(status));
                 // BEGIN EDIT
                 replace.put("<soluot_" + t.toLowerCase(Locale.ROOT) + ">", Collections.singletonList(String.valueOf(Game.getTurn(p, t))));
+//                replace.put("<soluot_ngay_" + t.toLowerCase(Locale.ROOT) + ">", Collections.singletonList(String.valueOf(Game.getGame().maxTurnsPerDay - FileManager.getFileConfig(FileManager.Files.TURNS).getInt("Plays." +  + '.' + p.getName()))));
                 // END EDIT
                 ItemStack item = null;
                 String key = this.parseType(t);

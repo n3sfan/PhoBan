@@ -6,8 +6,11 @@ import camchua.phoban.mythicmobs.BukkitAPIHelper;
 import camchua.phoban.utils.Messages;
 import java.util.HashMap;
 import java.util.Iterator;
+
+import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -48,7 +51,6 @@ public class GameListener implements Listener {
                   Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "spawn " + p.getName());
                }, 1L);
             }
-
          }
       } else {
          BukkitAPIHelper mm = PhoBan.inst().getBukkitAPIHelper();
@@ -58,9 +60,9 @@ public class GameListener implements Listener {
                Game game = data.getGame();
                game.addProgress(mm.getMythicMobInternalName(e.getEntity()), 1);
                // BEGIN EDIT
-               if (e.getEntity().getKiller() != null) {
+//               if (e.getEntity().getKiller() != null) {
                   game.addKill(e.getEntity().getKiller().getName(), 1);
-               }
+//               }
                // END EDIT
                int max = game.getProgressMax();
                int current = game.getProgressCurrent();
@@ -76,6 +78,36 @@ public class GameListener implements Listener {
             }
          }
       }
+   }
+
+   @EventHandler
+   public void onEntityRemove(EntityRemoveFromWorldEvent e) {
+//      Bukkit.getScheduler().runTaskLater(PhoBan.inst(), () -> {
+      BukkitAPIHelper mm = PhoBan.inst().getBukkitAPIHelper();
+      if (mm.isMythicMob(e.getEntity())) {
+         if (EntityData.data().containsKey(e.getEntity())) {
+            EntityData data = (EntityData) EntityData.data().get(e.getEntity());
+            Game game = data.getGame();
+            game.addProgress(mm.getMythicMobInternalName(e.getEntity()), 1);
+            // BEGIN EDIT
+//               if (e.getEntity().getKiller() != null) {
+            game.addKill(((LivingEntity) e.getEntity()).getKiller().getName(), 1);
+//               }
+            // END EDIT
+            int max = game.getProgressMax();
+            int current = game.getProgressCurrent();
+            String name = mm.getMythicMobDisplayNameGet((Entity) e.getEntity());
+            Iterator var8 = game.getPlayers().iterator();
+
+            while (var8.hasNext()) {
+               Player player = (Player) var8.next();
+               player.sendMessage(Messages.get("MobsLeft").replace("<name>", name).replace("<max>", max + "").replace("<current>", current + ""));
+            }
+
+            EntityData.data().remove(e.getEntity());
+         }
+      }
+//      }, 1L);
    }
 
    private boolean noProtect(Player p) {

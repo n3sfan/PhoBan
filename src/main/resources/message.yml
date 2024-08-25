@@ -103,6 +103,7 @@ RoomRequire: "&cBạn cần hoàn thành phó bản &f<room> &ctrước"
 LevelRequire: "&cBạn cần đạt cấp &f<level> &cđể vào phó bản"
 IsAnotherRoomStart: "&cVui lòng chờ các phòng khác kết thúc mới có thể bắt đầu"
 MaxTurnReached: "&cBan da vuot qua <max_turn> lan tham gia!"
+MaxTurnPerDayReached: "&cQua <max_turn> tham gia mot ngay!"
 
 Help:
   - "&f/phoban: &eLựa chọn phó bản và phòng chơi"

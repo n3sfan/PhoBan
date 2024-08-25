@@ -66,7 +66,8 @@ public class FileManager {
       PHOBAN("phoban.yml", "phoban.yml"),
       LOBBY("lobby.yml", "lobby.yml"),
       // BEGIN EDIT
-      TOP("top.yml", "top.yml");
+      TOP("top.yml", "top.yml"),
+      TURNS("turn.yml", "turn.yml");
       // END EDIT
       ;
 
