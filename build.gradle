@@ -25,6 +25,7 @@ repositories {
         name = 'minebench'
         url = 'https://repo.minebench.de/'
     }
+    maven { url 'https://mvn.lumine.io/repository/maven-public/' }
 }
 
 dependencies {
@@ -32,6 +33,7 @@ dependencies {
     compileOnly 'com.sk89q.worldedit:worldedit-bukkit:7.2.14'
     compileOnly 'me.clip:placeholderapi:2.11.5'
     compileOnly 'com.mojang:authlib:1.5.25'
+    compileOnly("io.lumine:Mythic-Dist:4.13.0")
 }
 
 def targetJavaVersion = 8

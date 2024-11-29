@@ -28,3 +28,6 @@ Tân đã thanh toán!
 10h39 - 11h02
 
 đã thanh toán
+
+28/8:
+fix bug ko tinh quai giet trong top - 30p

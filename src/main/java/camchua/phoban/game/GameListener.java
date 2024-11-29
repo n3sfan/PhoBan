@@ -2,13 +2,16 @@ package camchua.phoban.game;
 
 import camchua.phoban.PhoBan;
 import camchua.phoban.manager.FileManager;
-import camchua.phoban.mythicmobs.BukkitAPIHelper;
 import camchua.phoban.utils.Messages;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.UUID;
 
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
+import io.lumine.xikage.mythicmobs.MythicMobs;
+import io.lumine.xikage.mythicmobs.api.bukkit.BukkitAPIHelper;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -53,34 +56,46 @@ public class GameListener implements Listener {
             }
          }
       } else {
-         BukkitAPIHelper mm = PhoBan.inst().getBukkitAPIHelper();
-         if (mm.isMythicMob(e.getEntity())) {
-            if (EntityData.data().containsKey(e.getEntity())) {
-               EntityData data = (EntityData)EntityData.data().get(e.getEntity());
-               Game game = data.getGame();
-               game.addProgress(mm.getMythicMobInternalName(e.getEntity()), 1);
-               // BEGIN EDIT
+//          System.out.println(EntityData.data().keySet().stream().anyMatch(key -> key.getUniqueId().equals(e.getEntity().getUniqueId())));
+//          System.out.println(MythicMobs.inst().getAPIHelper().isMythicMob(e.getEntity()));
+          final BukkitAPIHelper helper = MythicMobs.inst().getAPIHelper();
+
+          if (e.getEntity().getKiller() != null) {
+              HashMap<UUID, EntityData> dataMap = new HashMap<>();
+              if (EntityData.data().containsKey(e.getEntity().getUniqueId())) {
+//                      final String internalName = mm.getMythicMobInternalName(e.getEntity());
+//                      final String name = mm.getMythicMobDisplayNameGet((Entity) e.getEntity());
+                  final String killerName = e.getEntity().getKiller().getName();
+                  final Entity entity = e.getEntity();
+                  final EntityData data = (EntityData) EntityData.data().get(e.getEntity().getUniqueId());
+//                  System.out.println(data.name + " killed2");
+                  Bukkit.getScheduler().runTask(PhoBan.inst(), () -> {
+                      Game game = data.getGame();
+                      game.addProgress(data.internalName, 1);
+                      // BEGIN EDIT
 //               if (e.getEntity().getKiller() != null) {
-                  game.addKill(e.getEntity().getKiller().getName(), 1);
+
+                      game.addKill(ChatColor.stripColor(killerName), 1);
 //               }
-               // END EDIT
-               int max = game.getProgressMax();
-               int current = game.getProgressCurrent();
-               String name = mm.getMythicMobDisplayNameGet((Entity)e.getEntity());
-               Iterator var8 = game.getPlayers().iterator();
+                      // END EDIT
+                      int max = game.getProgressMax();
+                      int current = game.getProgressCurrent();
+                      Iterator var8 = game.getPlayers().iterator();
 
-               while(var8.hasNext()) {
-                  Player player = (Player)var8.next();
-                  player.sendMessage(Messages.get("MobsLeft").replace("<name>", name).replace("<max>", max + "").replace("<current>", current + ""));
-               }
+                      while (var8.hasNext()) {
+                          Player player = (Player) var8.next();
+                          player.sendMessage(Messages.get("MobsLeft").replace("<name>", data.name).replace("<max>", max + "").replace("<current>", current + ""));
+                      }
 
-               EntityData.data().remove(e.getEntity());
-            }
-         }
+                      EntityData.data().remove(entity.getUniqueId());
+                  });
+              }
+          }
       }
    }
 
-   @EventHandler
+   // BEGIN EDIT
+   /*@EventHandler
    public void onEntityRemove(EntityRemoveFromWorldEvent e) {
 //      Bukkit.getScheduler().runTaskLater(PhoBan.inst(), () -> {
       BukkitAPIHelper mm = PhoBan.inst().getBukkitAPIHelper();
@@ -108,7 +123,8 @@ public class GameListener implements Listener {
          }
       }
 //      }, 1L);
-   }
+   }*/
+   // END
 
    private boolean noProtect(Player p) {
       if (!this.protect.containsKey(p)) {

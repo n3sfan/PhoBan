@@ -2,10 +2,13 @@ package camchua.phoban.game;
 
 import camchua.phoban.PhoBan;
 import camchua.phoban.manager.FileManager;
-import camchua.phoban.mythicmobs.BukkitAPIHelper;
 import camchua.phoban.utils.Messages;
 import camchua.phoban.utils.Random;
 import camchua.phoban.utils.Utils;
+import io.lumine.xikage.mythicmobs.MythicMobs;
+import io.lumine.xikage.mythicmobs.api.bukkit.BukkitAPIHelper;
+import io.lumine.xikage.mythicmobs.mobs.ActiveMob;
+import io.lumine.xikage.mythicmobs.mobs.MythicMob;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -654,12 +657,15 @@ public class Game {
                 }
 
                 loc.subtract(0.0, 1.0, 0.0);
-                final BukkitAPIHelper mm = PhoBan.inst().getBukkitAPIHelper();
+                // BEGIN EDIT
+//                final BukkitAPIHelper mm = PhoBan.inst().getBukkitAPIHelper();
+                BukkitAPIHelper mm = MythicMobs.inst().getAPIHelper();
+                // END
                 Iterator var19 = this.players.iterator();
 
                 while (var19.hasNext()) {
                     Player player = (Player) var19.next();
-                    String displayName = mm.getMythicMobDisplayNameGet(key);
+                    String displayName = mm.getMythicMob(key).getDisplayName().get();
                     String title = Messages.get("StageInfo." + (mob.equals("Boss") ? "Boss" : "Mob") + ".Title").replace("&", "\u00a7").replace("<stage>", this.current_stage + "").replace("<turn>", this.keyToTurn(this.getStageKey(this.stage_count)) + "").replace("<mob>", key).replace("<amount>", amount + "").replace("<name>", displayName);
                     String subtitle = Messages.get("StageInfo." + (mob.equals("Boss") ? "Boss" : "Mob") + ".Subtitle").replace("&", "\u00a7").replace("<stage>", this.current_stage + "").replace("<turn>", this.keyToTurn(this.getStageKey(this.stage_count)) + "").replace("<mob>", key).replace("<amount>", amount + "").replace("<name>", displayName);
                     player.sendTitle(title, subtitle);
@@ -679,7 +685,22 @@ public class Game {
                         }
 
                         Entity entity = mm.spawnMythicMob(key, spawn);
-                        EntityData.data().put(entity, new EntityData(entity, this));
+                        // BEGIN EDIT
+//                        final String internalName = mm.getMythicMobInternalName(entity);
+//                        final String name = mm.getMythicMobDisplayNameGet((Entity) entity);
+                        MythicMob type = mm.getMythicMobInstance(entity).getType();
+                        final String internalName = type.getInternalName();
+                        final String name = type.getDisplayName().get();
+//                        try {
+//                            final String internalName = mm.getMythicMobInternalName(entity);
+//                            final String name = mm.getMythicMobDisplayNameGet((Entity) entity);
+//                            System.out.println(internalName + " " + name);
+//                        } catch (Exception e) {
+//                            e.printStackTrace();
+//                        }
+//                        System.out.println(name + " added");
+                        EntityData.data().put(entity.getUniqueId(), new EntityData(entity, this, name, internalName));
+                        // END
                     }
                 } catch (Exception var17) {
                     var17.printStackTrace();
@@ -718,30 +739,30 @@ public class Game {
         FileConfiguration config = FileManager.getFileConfig(FileManager.Files.CONFIG);
         // BEGIN EDIT
         FileConfiguration topConfig = FileManager.getFileConfig(FileManager.Files.TOP);
-        if (topConfig.getInt("Plays." + name + '.' + p.getName()) >= config.getInt("Settings.MaxTurn")) {
+        if (topConfig.getInt("Plays." + type + '.' + p.getName()) >= config.getInt("Settings.MaxTurn")) {
             String msg = Messages.get("MaxTurnReached").replace("<max_turn>", "" + config.getInt("Settings.MaxTurn"));
             p.sendMessage(msg);
             return;
         }
         FileConfiguration turnConfig = FileManager.getFileConfig(FileManager.Files.TURNS);
-        if (LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) * 1000 - turnConfig.getLong("Start." + name) >= TimeUnit.DAYS.toMillis(1L)) {
-            turnConfig.set("Start." + name, LocalDate.now().atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000L);
-            turnConfig.set("Plays." + name, null);
+        if (LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) * 1000 - turnConfig.getLong("Start." + type) >= TimeUnit.DAYS.toMillis(1L)) {
+            turnConfig.set("Start." + type, LocalDate.now().atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000L);
+            turnConfig.set("Plays." + type, null);
             FileManager.saveFileConfig(turnConfig, FileManager.Files.TURNS);
         }
-        if (turnConfig.getInt("Plays." + name + '.' + p.getName()) >= this.maxTurnsPerDay) {
+        if (turnConfig.getInt("Plays." + type + '.' + p.getName()) >= this.maxTurnsPerDay) {
             String msg = Messages.get("MaxTurnPerDayReached").replace("<max_turn>", "" + this.maxTurnsPerDay);
             p.sendMessage(msg);
             return;
         }
-        // END
 
-        String roomRequire = config.getString("Settings.RoomRequire." + this.name, "");
+        String roomRequire = config.getString("Settings.RoomRequire." + this.type, "");
         if (!roomRequire.isEmpty() && !isComplete(p, roomRequire)) {
             String msg = Messages.get("RoomRequire").replace("<room>", roomRequire);
             p.sendMessage(msg);
         } else {
-            int levelRequire = config.getInt("Settings.LevelRequire." + this.name, 0);
+            int levelRequire = config.getInt("Settings.LevelRequire." + this.type, 0);
+            // END
             if (levelRequire != 0 && levelRequire > p.getLevel()) {
                 String msg = Messages.get("LevelRequire").replace("<level>", String.valueOf(levelRequire));
                 p.sendMessage(msg);
@@ -802,13 +823,25 @@ public class Game {
 
     private void clearMobs() {
         List<EntityData> edata = new ArrayList(EntityData.data().values());
+//        System.out.println("Cleared: " + edata.size());
         Iterator var2 = edata.iterator();
 
         while (var2.hasNext()) {
             EntityData e = (EntityData) var2.next();
             if (e.getGame().equals(this)) {
-                EntityData.data().remove(e.getEntity());
+//                System.out.println("Removed " + e.getEntity().getCustomName());
+                EntityData.data().remove(e.getEntity().getUniqueId());
+                // BEGIN EDIT
+//                ActiveMob activeMob = MythicMobs.inst().getAPIHelper().getMythicMobInstance(e.getEntity());
+//                if (activeMob != null) {
+////                    System.out.println("not null");
+//                    activeMob.setDespawned();
+//                    activeMob.getEntity().remove();
+//                    MythicMobs.inst().getMobManager().unregisterActiveMob(activeMob);
+//                    activeMob.getEntity().getBukkitEntity().remove();
+//                }
                 e.getEntity().remove();
+                // END
             }
         }
 
@@ -889,6 +922,7 @@ public class Game {
      */
     private void recordToTop(Player p) {
         FileConfiguration topConfig = FileManager.getFileConfig(FileManager.Files.TOP);
+//        System.out.println(kills);
 
         topConfig.set("Overall." + p.getName(), topConfig.getInt("Overall." + p.getName()) + kills.getOrDefault(p.getName(), 0));
         sortSectionValues(topConfig.getConfigurationSection("Overall"), Comparator.<Map.Entry<String, Object>>comparingInt(e -> (int) e.getValue()).reversed());
@@ -905,7 +939,7 @@ public class Game {
         FileManager.saveFileConfig(topConfig, FileManager.Files.TOP);
 
         FileConfiguration turnConfig = FileManager.getFileConfig(FileManager.Files.TURNS);
-        turnConfig.set("Plays." + name + '.' + p.getName(), turnConfig.getInt("Plays." + name + '.' + p.getName()) + 1);
+        turnConfig.set("Plays." + type + '.' + p.getName(), turnConfig.getInt("Plays." + type + '.' + p.getName()) + 1);
         FileManager.saveFileConfig(turnConfig, FileManager.Files.TURNS);
     }
 
@@ -929,7 +963,9 @@ public class Game {
     // END
 
     public void reward(Player p) {
-        complete(p, this.name);
+        // BEGIN EDIT
+        complete(p, this.type);
+        // END
         Random random = new Random();
         Iterator var3 = this.room.getConfigurationSection("Reward").getKeys(false).iterator();
 
